@@ -1,0 +1,20 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "f1c1d19450e20bcca8590a1b49cbcf4221d4c1a757a3f95d03b569671734af00"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.6"
+        },
+        "sources": [
+            {
+                "name": "devpi",
+                "url": "https://devpi.p.kensho.com/kensho/all/+simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {},
+    "develop": {}
+}
