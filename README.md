@@ -11,9 +11,8 @@ The code is arranged as follows<BR>
         * `SystemItem`: This is where dependency mechanism is implemented. You can define a dependency which signifies an independent column -> dependent column relationships between columns. Circular dependencies are allowed and handled properly by going around the circle once.  You can also define actions on columns. Please see <I>system_item.py</I> and <I>test_system_item.py</I> for more explanation and example.
 
 
-# Documentation
-Docs to come ...
-
 # Test/Example
 [Dependency Test](app/tests/test_system_item.py)<BR>
 [DataItem/ContainerItem Test](app/tests/test_data_item.py)
+    
+## [License](License)
