@@ -73,6 +73,10 @@ us_bond.get(column='dv01').set_value(100.0)  # We are in an inconsistent state n
 us_bond.turn_dependency_on()
 # The circular price <-> yield dependency is being tested
 us_bond.get(column='price').set_value(100.5)
+# After the above line:
+#     price == 100.5
+#     yield == 1.50749999
+#     dv01 == 1.005
 ```
 
 # Test/Example
