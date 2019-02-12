@@ -11,7 +11,7 @@ The code is arranged as follows<BR>
         * `SystemItem`: This is where dependency mechanism is implemented. You can define a dependency which signifies an independent column -> dependent column relationships between columns. Circular dependencies are allowed and handled properly by going around the circle once.  You can also define actions on columns. Please see <I>system_item.py</I> and <I>test_system_item.py</I> for more explanation and example.
 
 ```Python
-from ..system_item import DependencyResult, SystemItem
+from system_item import DependencyResult, SystemItem
 
 
 class USTreasuryBond(SystemItem):
