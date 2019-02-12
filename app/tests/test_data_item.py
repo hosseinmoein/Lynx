@@ -85,18 +85,20 @@ class TestDataItems(unittest.TestCase):
 
     def test_container_item(self):
         """Test the container item."""
+        self.maxDiff = 2048
+        
         ci = ContainerItem()
         ci.add_float_column('float_column1', 45.5)
         ci.add_float_column('float_column2', None)
         ci.add_string_column('str_column', 'Alakazam')
         ci.add_integer_column('int_column', 34)
         ci.add_integer_column('int_column2', 5)
-        ci.add_datetime_column('datetime_column', datetime.now())
+        ci.add_datetime_column('datetime_column', datetime(2019, 2, 10, 15, 25, 0, 880490))
         ci.add_null_column('might_be_null_column')
         ci.add_row('int_column', 50)
         ci.add_row('int_column', 51)
         ci.add_row('str_column', 'Bugs Bunny')
-        ci.add_row('datetime_column', datetime.now())
+        ci.add_row('datetime_column', datetime(2019, 2, 10, 15, 25, 0, 880513))
         ci.add_row('might_be_null_column', 45)
 
         self.assertEqual(ci.number_of_columns(), 7)
@@ -109,6 +111,26 @@ class TestDataItems(unittest.TestCase):
         self.assertTrue(ci == ci_2)
         ci_2.add_container_column('container_column', ci)
         ci_2.get(column='int_column').set_value(-34)
+
+        self.assertEqual(ci_2.get_value(),
+            '''
+            float_column1: 45.5,
+            float_column2: __null__,
+            str_column: Alakazam,Bugs Bunny,
+            int_column: -34,50,51,
+            int_column2: 5,
+            datetime_column: 2019-02-10 15:25:00.880490,2019-02-10 15:25:00.880513,
+            might_be_null_column: __null__,45,
+            container_column:  {
+                float_column1: 45.5,
+                float_column2: __null__,
+                str_column: Alakazam,Bugs Bunny,
+                int_column: 34,50,51,
+                int_column2: 5,
+                datetime_column: 2019-02-10 15:25:00.880490,2019-02-10 15:25:00.880513,
+                might_be_null_column: __null__,45,
+            }
+            ''')
 
         self.assertEqual(ci.get(column='int_column').get_value(), 34)
         self.assertEqual(ci_2.get(column='int_column').get_value(), -34)
