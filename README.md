@@ -62,9 +62,6 @@ class USTreasuryBond(SystemItem):
 
 
 us_bond = USTreasuryBond()
-us_bond.get(column='price').set_value(120.0)
-us_bond.get(column='yield').set_value(1.5)  # We are in an inconsistent state now
-us_bond.get(column='dv01').set_value(100.0)  # We are in an inconsistent state now
         
 us_bond.turn_dependency_on()
 # The circular price <-> yield dependency is being tested
