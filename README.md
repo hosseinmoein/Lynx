@@ -55,13 +55,9 @@ class USTreasuryBond(SystemItem):
 
     def wire(self) -> None:
         """Setup the dependencies."""
-        self.add_dependency(
-            self.column_index('price'), self.column_index('yield'), self.price_to_yield
-        )
-        self.add_dependency(
-            self.column_index('yield'), self.column_index('price'), self.yield_to_price
-        )
-        self.add_dependency('price', self.column_index('dv01'), self.price_to_dv01)
+        self.add_dependency('price', 'yield', self.price_to_yield)
+        self.add_dependency('yield', 'price', self.yield_to_price)
+        self.add_dependency('price', 'dv01', self.price_to_dv01)
         self.add_action('dv01', self.dv01_action)
 
 
