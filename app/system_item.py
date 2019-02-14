@@ -130,7 +130,7 @@ class SystemItem(ContainerItem):
         value: Union[AllowedBaseTypes, ContainerItem],
     ) -> DataItemBase:
         """Add a row to the given column."""
-        raise RuntimeError('SystemItem::add_row(): You cannot add rows to a system item')
+        raise NotImplementedError('SystemItem::add_row(): You cannot add rows to a system item')
 
     def add_dependency(
         self: _SystemItemType,

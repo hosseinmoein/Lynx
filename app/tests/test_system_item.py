@@ -5,6 +5,7 @@ Copyright (C) 2019-2020 Hossein Moein
 Distributed under the BSD Software License (see file LICENSE)
 """
 
+from datetime import datetime
 import unittest
 
 from ..system_item import DependencyResult, SystemItem
@@ -20,10 +21,10 @@ class USTreasuryBond(SystemItem):
         """Initialize."""
         super().__init__()
         self.turn_dependency_off()
-        self.add_float_column('price', 0)
+        self.add_float_column('price', None)
         self.add_float_column('yield', 0)
         self.add_float_column('dv01', 0)
-        self.add_integer_column('expiration', 0)
+        self.add_datetime_column('expiration', None)
         self.wire()
 
     def price_to_yield(self, price_col: int, yield_col: int) -> DependencyResult:
@@ -85,7 +86,7 @@ class TestSystemItem(unittest.TestCase):
         self.assertAlmostEqual(us_bond.get(column='dv01').get_value(), 1.005)
         self.assertEqual(SOMETHING_TO_CHANGE, 20)
 
-        us_bond.get(column='expiration').set_value(20251230)
+        us_bond.get(column='expiration').set_value(datetime(2019, 3, 5, 8, 23, 5, 123456))
         self.assertEqual(us_bond.get(column='price').get_value(), 100.5)
         self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.50749999)
         self.assertAlmostEqual(us_bond.get(column='dv01').get_value(), 1.005)
@@ -97,3 +98,9 @@ class TestSystemItem(unittest.TestCase):
         self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.55)
         self.assertAlmostEqual(us_bond.get(column='dv01').get_value(), 1.0333333)
         self.assertEqual(SOMETHING_TO_CHANGE, 40)
+
+        self.assertEqual(
+            us_bond.get_string(),
+            'price: 103.33333333333334, -> price_to_yield,price_to_dv01,\nyield: 1.55, -> '
+            'yield_to_price,\ndv01: 1.0333333333333334, -> dv01_action,\nexpiration: '
+            '2019-03-05 08:23:05.123456,\n')

@@ -28,9 +28,7 @@ class DataItem(DataItemBase):
 
     def __eq__(self: _DataItemType, other: DataItemBase) -> bool:
         """== operator."""
-        if not all([self._value, other.get_value()]):
-            return True
-        elif self._value is None or other.get_value() is None:
+        if self._value is None or other.get_value() is None:
             return False
         lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
         rhs = ((type(self._value)(other.get_value()))
@@ -67,7 +65,10 @@ class DataItem(DataItemBase):
 
     def _set_hook(self: _DataItemType, value: Union[DataItemBase, AllowedBaseTypes]) -> bool:
         """Set hook method."""
-        value_to_set = type(self._value)(value) if self._value is not None else value
+        if self._value is None or isinstance(self._value, datetime) and isinstance(value, datetime):
+            value_to_set = value
+        else:
+            value_to_set = type(self._value)(value)
         # if nothing needs to be changed, return False so dependencies do not trigger
         if self._value == value_to_set:
             return False

@@ -18,10 +18,10 @@ class DataItemBase(object):
     """
     An abstract data item.
     DataItem's can carry/be any of the above "allowed types" with the following specs:
-        1. A DataItem cannot change type with below exceptions. For example, once you create
+        1. A DataItem cannot change type with exceptions below. For example, once you create
            an integer DataItem, you cannot change it to an string or float.
         2. A non-null DataItem (i.e. a DataItem whose value is not None) can be set to null
-           by calling the set_to_null() method.
+           only by calling the set_to_null() method.
         3. A null DataItem (i.e. a DataItem whose value is None) can be set to a non-null value
            by calling the set_value() method.
         4. So, 2 and 3 explain the exceptions to 1.
@@ -105,7 +105,7 @@ class DataItemBase(object):
         return not self.__lt__(other)
 
     def _set_to_null_hook(self: _DataItemBaseType) -> bool:
-        """Set to null hook to be implemented by derived classes."""
+        """Set hook to be implemented by derived classes."""
         raise NotImplementedError('DataItemBase::_set_to_null_hook() is not implemented.')
 
     def _set_hook(self: _DataItemBaseType,

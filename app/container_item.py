@@ -95,7 +95,7 @@ class ContainerItem(DataItemBase):
         """Get the number of rows for the given column"""
         col_index = self._names_dict.get(column, -1) if isinstance(column, str) else column
         if col_index < 0:
-            raise RuntimeError(f'ContainerItem::number_of_rows(): column {column} does not exist')
+            raise IndexError(f'ContainerItem::number_of_rows(): column {column} does not exist')
         return len(self._column_data[col_index])
 
     def get(self: _ContainerItemType, row: int = 0, column: Union[int, str] = 0) -> DataItemBase:
@@ -135,31 +135,39 @@ class ContainerItem(DataItemBase):
         col_number = len(self._column_names_and_types) - 1
         self._names_dict[name] = col_number
         data_item = value
-        if not isinstance(value, ContainerItem) and value is not None:
-            data_item = DataItem(column_type(value) if not isinstance(value, datetime) else value)
-        elif value is None:
+        if isinstance(value, datetime) or value is None:
             data_item = DataItem(value)
+        elif not isinstance(value, ContainerItem):
+            data_item = DataItem(column_type(value))
         data_item._my_column_in_container = col_number
         self._column_data.append([data_item])
         return data_item
 
-    def add_integer_column(self: _ContainerItemType, name: str, value: int) -> DataItem:
+    def add_integer_column(
+        self: _ContainerItemType, name: str, value: Union[int, None]
+    ) -> DataItem:
         """Add an integer column."""
         return self._add_column(name, value, int)
 
-    def add_float_column(self: _ContainerItemType, name: str, value: float) -> DataItem:
+    def add_float_column(
+        self: _ContainerItemType, name: str, value: Union[float, None]
+    ) -> DataItem:
         """Add a float column."""
         return self._add_column(name, value, float)
 
-    def add_string_column(self: _ContainerItemType, name: str, value: str) -> DataItem:
+    def add_string_column(
+        self: _ContainerItemType, name: str, value: Union[str, None]
+    ) -> DataItem:
         """Add a string column."""
         return self._add_column(name, value, str)
 
-    def add_bool_column(self: _ContainerItemType, name: str, value: bool) -> DataItem:
+    def add_bool_column(self: _ContainerItemType, name: str, value: Union[bool, None]) -> DataItem:
         """Add a boolean column."""
         return self._add_column(name, value, bool)
 
-    def add_datetime_column(self: _ContainerItemType, name: str, value: datetime) -> DataItem:
+    def add_datetime_column(
+        self: _ContainerItemType, name: str, value: Union[datetime, None]
+    ) -> DataItem:
         """Add a datetime column."""
         return self._add_column(name, value, datetime)
 
