@@ -62,6 +62,8 @@ class SystemItem(ContainerItem):
         # The vector of dependencies/actions per column
         self._dependency_vector: List[List[_DependencyItem]] = []
         self._dependency_on: bool = True  # Is dependency engine on?
+        # Max number of times to go around a circular dependency before stopping
+        self._dependency_circle_max: int = 1
 
     def get_value(self: _SystemItemType) -> AllowedBaseTypes:
         """get_value() for system item."""
@@ -90,11 +92,12 @@ class SystemItem(ContainerItem):
                     if dep.dependent_column is None:  # This is an action
                         dep.callback_method(dep.independent_column)
                     # This is a dependency
-                    elif self.get(column=dep.dependent_column)._inside_dependency is False:
+                    elif (self.get(column=dep.dependent_column)._dependency_circle_count <
+                              self._dependency_circle_max):
                         # Take care of circular dependencies
-                        self.get(column=column)._inside_dependency = True
+                        self.get(column=column)._dependency_circle_count += 1
                         dep.callback_method(dep.independent_column, dep.dependent_column)
-                        self.get(column=column)._inside_dependency = False
+                        self.get(column=column)._dependency_circle_count -= 1
         self.touch()
 
     def __eq__(self: _SystemItemType, other: DataItemBase) -> bool:
@@ -192,3 +195,7 @@ class SystemItem(ContainerItem):
     def turn_dependency_off(self: _SystemItemType) -> None:
         """Turn off the dependency engine."""
         self._dependency_on = False
+
+    def set_dependency_circle_max(self: _SystemItemType, max_count: int) -> None:
+        """Set max number of times to go around a circular dependency before stopping."""
+        self._dependency_circle_max = max_count

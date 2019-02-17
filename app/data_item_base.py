@@ -36,9 +36,8 @@ class DataItemBase(object):
         # triggered only on containers with one row. If we decide to have dependencies on many
         # rows (e.g. like Excel), we need to also store the row index here
         self._my_column_in_container: int = None
-        # A flag that is on, if we are inside a dependency loop. Its main purpose is to handle
-        # circular dependencies.
-        self._inside_dependency: bool = False
+        # Current count of circles made around a circular dependency
+        self._dependency_circle_count: int = 0
 
     def get_value(self: _DataItemBaseType) -> AllowedBaseTypes:
         """Abstract get value."""
@@ -69,7 +68,7 @@ class DataItemBase(object):
 
     def touch(self: _DataItemBaseType) -> None:
         """Trigger dependency."""
-        if self._col_change_callback is not None and not self._inside_dependency:
+        if self._col_change_callback is not None:
             self._col_change_callback(0, self._my_column_in_container)
 
     def __str__(self: _DataItemBaseType) -> str:

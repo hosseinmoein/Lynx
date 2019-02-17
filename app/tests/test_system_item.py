@@ -104,3 +104,10 @@ class TestSystemItem(unittest.TestCase):
             'price: 103.33333333333334, -> price_to_yield,price_to_dv01,\nyield: 1.55, -> '
             'yield_to_price,\ndv01: 1.0333333333333334, -> dv01_action,\nexpiration: '
             '2019-03-05 08:23:05.123456,\n')
+
+        # Now that we set the max circle count to 10, price should not exactly stay the same
+        us_bond.set_dependency_circle_max(10)
+        us_bond.get(column='price').set_value(100.5)
+        self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) > 0.0)
+        self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) < 0.000001)
+        self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.50749999)
