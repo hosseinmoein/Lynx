@@ -98,6 +98,8 @@ class SystemItem(ContainerItem):
                         self.get(column=column)._dependency_circle_count += 1
                         dep.callback_method(dep.independent_column, dep.dependent_column)
                         self.get(column=column)._dependency_circle_count -= 1
+
+        # In case this system item itself is part of another system item dependency
         self.touch()
 
     def __eq__(self: _SystemItemType, other: DataItemBase) -> bool:
