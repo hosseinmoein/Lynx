@@ -26,34 +26,33 @@ class DataItem(DataItemBase):
         """Get value method for DataItem."""
         return self._value
 
+    def _get_lhs_and_rhs(self, other):
+       """Get the lhs and rhs"""
+       lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
+       rhs = ((type(self._value)(other.get_value()))
+              if not isinstance(other.get_value(), datetime) else other.get_value().timestamp()
+              )
+       return lhs, rhs
+
     def __eq__(self: _DataItemType, other: DataItemBase) -> bool:
         """== operator."""
-        if self._value is None or other.get_value() is None:
+        if self._value is None or other.get_value() is None:  # None != None
             return False
-        lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
-        rhs = ((type(self._value)(other.get_value()))
-               if not isinstance(other.get_value(), datetime) else other.get_value().timestamp()
-               )
+        lhs, rhs = self._get_lhs_and_rhs(other)
         return lhs == rhs
 
     def __lt__(self: _DataItemType, other: DataItemBase) -> bool:
         """< operator."""
-        if self._value is None or other.get_value() is None:
+        if self._value is None or other.get_value() is None:  # None is not less than None
             return False
-        lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
-        rhs = ((type(self._value)(other.get_value()))
-               if not isinstance(other.get_value(), datetime) else other.get_value().timestamp()
-               )
+        lhs, rhs = self._get_lhs_and_rhs(other)
         return lhs < rhs
 
     def __gt__(self: _DataItemType, other: DataItemBase) -> bool:
         """> operator."""
-        if self._value is None or other.get_value() is None:
+        if self._value is None or other.get_value() is None:  # None is not greater than None
             return False
-        lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
-        rhs = ((type(self._value)(other.get_value()))
-               if not isinstance(other.get_value(), datetime) else other.get_value().timestamp()
-               )
+        lhs, rhs = self._get_lhs_and_rhs(other)
         return lhs > rhs
 
     def _set_to_null_hook(self: _DataItemType) -> bool:
@@ -67,6 +66,8 @@ class DataItem(DataItemBase):
         """Set hook method."""
         if self._value is None or isinstance(self._value, datetime) and isinstance(value, datetime):
             value_to_set = value
+        elif isinstance(value, DataItemBase):
+            value_to_set = type(self._value)(value.get_value())
         else:
             value_to_set = type(self._value)(value)
         # if nothing needs to be changed, return False so dependencies do not trigger

@@ -44,9 +44,7 @@ class ContainerItem(DataItemBase):
             result += f'{offset}{name_and_type[0]}: '
             data_idx = container._names_dict.get(name_and_type[0])
             for data_item in container._column_data[data_idx]:
-                if data_item.is_null():
-                    result += '__null__,'
-                elif isinstance(data_item, ContainerItem):
+                if isinstance(data_item, ContainerItem):
                     result += ' {\n'
                     result += ContainerItem._string_format(data_item, offset + '    ')
                     result += '}\n'
@@ -102,7 +100,7 @@ class ContainerItem(DataItemBase):
         """Get data from container for the given row and column."""
         column_num = self._names_dict.get(column) if isinstance(column, str) else column
         if column_num is None or column_num < 0 or column_num >= len(self._column_data):
-            raise IndexError(f'ContainerItem::get(): column {column} cannot be accessed')
+            raise IndexError(f'ContainerItem::get(): column {column} does not exist')
         if row < 0 or row >= len(self._column_data[column_num]):
             raise IndexError(f'ContainerItem::get(): row {row} does not exist for column {column}')
         return self._column_data[column_num][row]
@@ -132,16 +130,25 @@ class ContainerItem(DataItemBase):
         if self._names_dict.get(name, False):
             raise RuntimeError(f'ContainerItem::_add_column(): column {name} already exists')
         self._column_names_and_types.append((name, column_type))
-        col_number = len(self._column_names_and_types) - 1
-        self._names_dict[name] = col_number
-        data_item = value
+        col_index = len(self._column_names_and_types) - 1
+        self._names_dict[name] = col_index
+        data_item = value  # If this is a ContainerITem
         if isinstance(value, datetime) or value is None:
             data_item = DataItem(value)
         elif not isinstance(value, ContainerItem):
             data_item = DataItem(column_type(value))
-        data_item._my_column_in_container = col_number
+        data_item._my_column_in_container = col_index  # Sneaking a private member access!
         self._column_data.append([data_item])
         return data_item
+
+    def remove_column(self: _ContainerItemType, column: Union[int, str]) -> None:
+        """Remove the given column."""
+        column_num = self._names_dict.get(column) if isinstance(column, str) else column
+        if column_num is None or column_num < 0 or column_num >= len(self._column_data):
+            raise IndexError(f'ContainerItem::remove_column(): column {column} does not exist')
+        del self._column_names_and_types[column_num]
+        del self._column_data[column_num]
+        self._names_dict = {nt[0]: idx for idx, nt in enumerate(self._column_names_and_types)}
 
     def add_integer_column(
         self: _ContainerItemType, name: str, value: Union[int, None]
@@ -189,7 +196,7 @@ class ContainerItem(DataItemBase):
         """Add a row to the given column."""
         data_index = self._names_dict.get(column) if isinstance(column, str) else column
         if data_index is None or data_index < 0 or data_index >= len(self._column_data):
-            raise RuntimeError(f'ContainerItem::add_row(): column {str(column)} cannot be extended')
+            raise RuntimeError(f'ContainerItem::add_row(): column {str(column)} does not exist')
 
         # Special handling for null columns: if a column was originally added as null, allow it to
         # change type. After that this column could only have rows of null or this type.
@@ -207,3 +214,18 @@ class ContainerItem(DataItemBase):
         data_item = DataItem(value) if not isinstance(value, ContainerItem) else value
         self._column_data[data_index].append(data_item)
         return data_item
+
+    def remove_row(self: _ContainerItemType, column: Union[str, int], row_index: int) -> None:
+        """Remove the row for the given column."""
+        column_num = self._names_dict.get(column) if isinstance(column, str) else column
+        if column_num is None or column_num < 0 or column_num >= len(self._column_data):
+            raise IndexError(f'ContainerItem::remove_row(): column {column} does not exist')
+        row_len = len(self._column_data[column_num])
+        if row_len <= row_index:
+            raise IndexError(f'ContainerItem::remove_row(): '
+                             f'row {row_index} does not exist for column {column}')
+        if row_len == 1:
+            self.remove_column(column_num)
+        else:
+            del self._column_data[column_num][row_index]
+

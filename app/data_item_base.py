@@ -31,9 +31,9 @@ class DataItemBase(object):
         """Initialize."""
         super().__init__()
         # A callback to be called when value of this data item changes
-        self._col_change_callback: _ColChangeCallback = None
-        # The column index, in case this object is inside a container. Currently dependencies can be
-        # triggered only on containers with one row. If we decide to have dependencies on many
+        self._item_change_callback: _ColChangeCallback = None
+        # The column index, in case this object is inside a container. Currently dependencies can
+        # be triggered only on containers with one row. If we decide to have dependencies on many
         # rows (e.g. like Excel), we need to also store the row index here
         self._my_column_in_container: int = None
         # Current count of circles made around a circular dependency
@@ -46,7 +46,8 @@ class DataItemBase(object):
     def get_string(self: _DataItemBaseType) -> str:
         """Get value as a string."""
         if self.is_null():
-            raise TypeError('DataItemBase::get_string(): A null cannot be converted to string')
+            # I am not really proud of this. But what are the alternatives?
+            return '~~NULL~~'
         return str(self.get_value())
 
     def is_null(self: _DataItemBaseType) -> bool:
@@ -66,10 +67,10 @@ class DataItemBase(object):
         """Is this a datetime?"""
         return isinstance(self.get_value(), datetime)
 
-    def touch(self: _DataItemBaseType) -> None:
+    def _touch(self: _DataItemBaseType) -> None:
         """Trigger dependency."""
-        if self._col_change_callback is not None:
-            self._col_change_callback(0, self._my_column_in_container)
+        if self._item_change_callback is not None:
+            self._item_change_callback(0, self._my_column_in_container)
 
     def __str__(self: _DataItemBaseType) -> str:
         """String representation."""
@@ -115,9 +116,10 @@ class DataItemBase(object):
     def set_to_null(self: _DataItemBaseType) -> None:
         """This is the only way to set an existing non-null DataItem to null"""
         if self._set_to_null_hook():  # A true return means something was changed
-            self.touch()  # Trigger the dependencies, if they are set up.
+            self._touch()  # Trigger the dependencies, if they are set up.
 
-    def set_value(self: _DataItemBaseType, value: _DataItemBaseType) -> None:
+    def set_value(self: _DataItemBaseType,
+                  value: Union[_DataItemBaseType, AllowedBaseTypes]) -> None:
         """Set value method."""
         if self._set_hook(value):  # A true return means something was changed
-            self.touch()  # Trigger the dependencies, if they are set up.
+            self._touch()  # Trigger the dependencies, if they are set up.

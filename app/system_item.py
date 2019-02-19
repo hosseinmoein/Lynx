@@ -23,26 +23,26 @@ class DependencyResult(Enum):
     NO_CHANGE = 2
 
 
-_ColChangeDependencyCallback = NewType(
-    '_ColChangeDependencyCallback', Callable[[_SystemItemType, int, int], DependencyResult]
+_DataChangeDependencyCallback = NewType(
+    '_DataChangeDependencyCallback', Callable[[_SystemItemType, int, int], DependencyResult]
 )
-_ColChangeActionCallback = NewType(
-    '_ColChangeActionCallback', Callable[[_SystemItemType, int], DependencyResult]
+_DataChangeActionCallback = NewType(
+    '_DataChangeActionCallback', Callable[[_SystemItemType, int], DependencyResult]
 )
 
 
 class _DependencyItem(object):
-    """An object to represent a dependency in systemItem"""
+    """An object to represent a dependency in SystemItem."""
 
     def __init__(self):
         """Initialize."""
         super().__init__()
-        # The column that its value has changed and triggers the dependency
-        self.independent_column: int = None
-        # The column that needs to be changed because of the dependency
+        # The column that needs to be changed because of independent column change.
+        # We do not need to store the independent column, since it would be the index in the list
+        # of dependencies.
         self.dependent_column: int = None
         # The callback for dependency or action
-        self.callback_method: Union[_ColChangeActionCallback, _ColChangeDependencyCallback] = None
+        self.callback: Union[_DataChangeActionCallback, _DataChangeDependencyCallback] = None
 
 
 class SystemItem(ContainerItem):
@@ -52,7 +52,7 @@ class SystemItem(ContainerItem):
            a dependent column (i.e. should to change as a result).
         2. An action specifies a reaction to a just-changed independent column.
     A system item allows many dependencies and many actions per column. Circular dependencies
-    are allowed and handled properly, by going around the circle only once.
+    are allowed and handled properly, by going around the circle the set number of times.
     Currently, system item allows only one row in the container
     """
 
@@ -72,35 +72,35 @@ class SystemItem(ContainerItem):
             result += f'{name_and_type[0]}: '
             data_idx = self._names_dict.get(name_and_type[0])
             for data_item in self._column_data[data_idx]:
-                if data_item.is_null():
-                    result += '__null__,'
-                else:
-                    result += f'{data_item.get_string()},'
+                result += f'{data_item.get_string()},'
                 if (len(self._dependency_vector[data_idx]) > 0 and
-                        self._dependency_vector[data_idx][0].callback_method is not None):
+                        self._dependency_vector[data_idx][0].callback is not None):
                     result += ' -> '
                     for dep in self._dependency_vector[data_idx]:
-                        result += f'{dep.callback_method.__name__},'
+                        result += f'{dep.callback.__name__},'
             result += '\n'
         return result
 
-    def _dependency_engine(self: _SystemItemType, row: int, column: int) -> None:
+    def _dependency_engine(self: _SystemItemType, row: int, independent_column: int) -> None:
         """The dependency loop where things happen."""
         if self._dependency_on:
-            for dep in self._dependency_vector[column]:
-                if dep.callback_method is not None:
-                    if dep.dependent_column is None:  # This is an action
-                        dep.callback_method(dep.independent_column)
-                    # This is a dependency
-                    elif (self.get(column=dep.dependent_column)._dependency_circle_count <
-                              self._dependency_circle_max):
-                        # Take care of circular dependencies
-                        self.get(column=column)._dependency_circle_count += 1
-                        dep.callback_method(dep.independent_column, dep.dependent_column)
-                        self.get(column=column)._dependency_circle_count -= 1
-
-        # In case this system item itself is part of another system item dependency
-        self.touch()
+            for dep in self._dependency_vector[independent_column]:
+                if dep.callback is None:  # Unfortunate side-affect of how _add_column works
+                    continue
+                if dep.dependent_column is None:  # This is an action
+                    dep.callback(independent_column)
+                # This is a dependency, so we execute only if we are within the set
+                # number around the circle.
+                elif (self.get(column=dep.dependent_column)._dependency_circle_count <
+                      self._dependency_circle_max):
+                    # Increase the number of times we passed this item
+                    self.get(column=independent_column)._dependency_circle_count += 1
+                    dep.callback(independent_column, dep.dependent_column)
+                    # Decrease the number of times we passed this item
+                    self.get(column=independent_column)._dependency_circle_count -= 1
+            else:  # we did not break, so there was a dependency
+                # In case this system item itself is part of another system item dependency
+                self._touch()
 
     def __eq__(self: _SystemItemType, other: DataItemBase) -> bool:
         """Equal operator for system item."""
@@ -124,10 +124,13 @@ class SystemItem(ContainerItem):
         """Private method to add a new column."""
         new_column: DataItemBase = super()._add_column(name, value, column_type)
 
-        new_column._col_change_callback = self._dependency_engine
+        new_column._item_change_callback = self._dependency_engine
         dep_item = _DependencyItem()
         self._dependency_vector.append([dep_item])
         return new_column
+
+    def remove_column(self: _SystemItemType, column: Union[int, str]) -> None:
+        raise NotImplementedError('SystemItem::remove_column(): Currently this is not implemented')
 
     def add_row(
         self: _SystemItemType,
@@ -137,11 +140,15 @@ class SystemItem(ContainerItem):
         """Add a row to the given column."""
         raise NotImplementedError('SystemItem::add_row(): You cannot add rows to a system item')
 
+    def remove_row(self: _SystemItemType, column: Union[str, int], row_index: int) -> None:
+        """Remove the row for the given column."""
+        raise NotImplementedError('SystemItem::remove_row(): You cannot add rows to a system item')
+
     def add_dependency(
         self: _SystemItemType,
         independent_column: Union[int, str],
         dependent_column: Union[int, str],
-        callback: _ColChangeDependencyCallback,
+        callback: _DataChangeDependencyCallback,
     ) -> None:
         """Add a dependency callback for the given columns"""
         indep_col_idx = (
@@ -155,12 +162,11 @@ class SystemItem(ContainerItem):
             else dependent_column
         )
         dep_item = _DependencyItem()
-        dep_item.independent_column = indep_col_idx
         dep_item.dependent_column = dep_col_idx
-        dep_item.callback_method = callback
+        dep_item.callback = callback
 
         # Is this the first dependency being added for this column?
-        if self._dependency_vector[indep_col_idx][0].dependent_column is None:
+        if self._dependency_vector[indep_col_idx][0].callback is None:
             self._dependency_vector[indep_col_idx][0] = dep_item
         else:  # append another dependency for the independent column
             self._dependency_vector[indep_col_idx].append(dep_item)
@@ -168,7 +174,7 @@ class SystemItem(ContainerItem):
     def add_action(
         self: _SystemItemType,
         independent_column: Union[int, str],
-        callback: _ColChangeActionCallback,
+        callback: _DataChangeActionCallback,
     ) -> None:
         """Add an action callback for the given columns"""
         indep_col_idx = (
@@ -177,11 +183,10 @@ class SystemItem(ContainerItem):
             else independent_column
         )
         dep_item = _DependencyItem()
-        dep_item.independent_column = indep_col_idx
-        dep_item.callback_method = callback
+        dep_item.callback = callback
 
         # Is this the first action being added for this column?
-        if self._dependency_vector[indep_col_idx][0].dependent_column is None:
+        if self._dependency_vector[indep_col_idx][0].callback is None:
             self._dependency_vector[indep_col_idx][0] = dep_item
         else:  # append another action for the independent column
             self._dependency_vector[indep_col_idx].append(dep_item)

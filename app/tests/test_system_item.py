@@ -111,3 +111,8 @@ class TestSystemItem(unittest.TestCase):
         self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) > 0.0)
         self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) < 0.000001)
         self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.50749999)
+
+        with self.assertRaises(NotImplementedError):
+            us_bond.remove_column('yield')
+        with self.assertRaises(NotImplementedError):
+            us_bond.remove_row('yield', 0)

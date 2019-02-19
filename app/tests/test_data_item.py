@@ -40,9 +40,14 @@ class TestDataItems(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             str_item.get(row=5, column='col_name')
-        null_item.touch()
+        null_item._touch()
         float_item2.set_value(int_item.get_value())
         self.assertEqual(float_item2.get_value(), 4.0)
+        int_item.set_value(11)
+        float_item2.set_value(int_item)
+        self.assertEqual(float_item2.get_value(), 11.0)
+        int_item.set_value(-2)
+        self.assertEqual(float_item2.get_value(), 11.0)
 
     def test_datetime(self):
         """Test the datetime data item."""
@@ -114,13 +119,13 @@ class TestDataItems(unittest.TestCase):
 
         self.assertEqual(
             ci_2.get_string(),
-            'float_column1: 45.5,\nfloat_column2: __null__,\nstr_column: Alakazam,Bugs Bunny,\n'
+            'float_column1: 45.5,\nfloat_column2: ~~NULL~~,\nstr_column: Alakazam,Bugs Bunny,\n'
             'int_column: -34,50,51,\nint_column2: 5,\ndatetime_column: 2019-02-23 23:30:45.965234,'
-            '2019-02-21 04:50:00.230000,\nmight_be_null_column: __null__,45,\ncontainer_column:  '
-            '{\n    float_column1: 45.5,\n    float_column2: __null__,\n    str_column: Alakazam,'
+            '2019-02-21 04:50:00.230000,\nmight_be_null_column: ~~NULL~~,45,\ncontainer_column:  '
+            '{\n    float_column1: 45.5,\n    float_column2: ~~NULL~~,\n    str_column: Alakazam,'
             'Bugs Bunny,\n    int_column: 34,50,51,\n    int_column2: 5,\n    datetime_column: '
             '2019-02-23 23:30:45.965234,2019-02-21 04:50:00.230000,\n    might_be_null_column: '
-            '__null__,45,\n}\n\n')
+            '~~NULL~~,45,\n}\n\n')
 
         self.assertEqual(ci.get(column='int_column').get_value(), 34)
         self.assertEqual(ci_2.get(column='int_column').get_value(), -34)
@@ -133,3 +138,40 @@ class TestDataItems(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             ci_2.add_row('str_column', False)
+
+        self.assertEqual(ci.number_of_columns(), 7)
+        self.assertEqual(ci.column_index('str_column'), 2)
+        self.assertEqual(ci.column_index('int_column2'), 4)
+        self.assertEqual(ci.column_index('int_column'), 3)
+        self.assertEqual(ci.get(column='int_column2').get_value(), 5)
+        self.assertTrue(ci.contains('int_column'))
+        ci.remove_column('int_column')
+        self.assertEqual(ci.number_of_columns(), 6)
+        self.assertEqual(ci.column_index('str_column'), 2)
+        self.assertEqual(ci.column_index('int_column2'), 3)
+        self.assertEqual(ci.get(column='int_column2').get_value(), 5)
+        self.assertFalse(ci.contains('int_column'))
+        with self.assertRaises(IndexError):
+            ci.remove_column('xxxx')
+
+        ci.add_integer_column('int_column', None)
+        ci.add_row('int_column', 50)
+        ci.add_row('int_column', 51)
+        ci.add_row('int_column', None)
+        self.assertEqual(ci.number_of_rows('int_column'), 4)
+        self.assertIsNone(ci.get(column='int_column', row=0).get_value())
+        self.assertEqual(ci.get(column='int_column', row=1).get_value(), 50)
+        self.assertEqual(ci.get(column='int_column', row=2).get_value(), 51)
+        self.assertIsNone(ci.get(column='int_column', row=3).get_value())
+        ci.remove_row('int_column', 1)
+        self.assertEqual(ci.number_of_rows('int_column'), 3)
+        self.assertIsNone(ci.get(column='int_column', row=0).get_value())
+        self.assertEqual(ci.get(column='int_column', row=1).get_value(), 51)
+        ci.remove_row('int_column', 0)
+        self.assertEqual(ci.number_of_rows('int_column'), 2)
+        self.assertEqual(ci.get(column='int_column').get_value(), 51)
+        ci.remove_row('int_column', 1)
+        with self.assertRaises(IndexError):
+            ci.remove_row('int_column', 1)
+        ci.remove_row('int_column', 0)
+        self.assertFalse(ci.contains('int_column'))
