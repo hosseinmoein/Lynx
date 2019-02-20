@@ -199,4 +199,8 @@ class SystemItem(ContainerItem):
 
     def set_dependency_circle_max(self: _SystemItemType, max_count: int) -> None:
         """Set max number of times to go around a circular dependency before stopping."""
+        from sys import getrecursionlimit, setrecursionlimit
+
+        if max_count - self._dependency_circle_max > 40:
+            setrecursionlimit(getrecursionlimit() * 2)
         self._dependency_circle_max = max_count

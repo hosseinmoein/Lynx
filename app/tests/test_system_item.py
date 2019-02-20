@@ -23,6 +23,9 @@ class USTreasuryBond(SystemItem):
         self.turn_dependency_off()
         self.add_float_column('price', None)
         self.add_float_column('yield', 0)
+        self.add_float_column('yield2', 0)
+        self.add_float_column('yield3', 0)
+        self.add_float_column('yield4', 0)
         self.add_float_column('dv01', 0)
         self.add_datetime_column('expiration', None)
         self.wire()
@@ -34,10 +37,31 @@ class USTreasuryBond(SystemItem):
         self.get(column=yield_col).set_value(yield_val)
         return DependencyResult.SUCCESS
 
-    def yield_to_price(self, yield_col: int, price_col: int) -> DependencyResult:
+    def yield_to_yield2(self, yield_col: int, yield2_col: int) -> DependencyResult:
         """Yield to price calculation."""
         yield_val = self.get(column=yield_col).get_value()
-        price = yield_val / 1.5 * 100.0
+        yield2 = yield_val * 2.001
+        self.get(column=yield2_col).set_value(yield2)
+        return DependencyResult.SUCCESS
+
+    def yield2_to_yield3(self, yield2_col: int, yield3_col: int) -> DependencyResult:
+        """Yield to price calculation."""
+        yield2_val = self.get(column=yield2_col).get_value()
+        yield3 = yield2_val * 2.001
+        self.get(column=yield3_col).set_value(yield3)
+        return DependencyResult.SUCCESS
+
+    def yield3_to_yield4(self, yield3_col: int, yield4_col: int) -> DependencyResult:
+        """Yield to price calculation."""
+        yield3_val = self.get(column=yield3_col).get_value()
+        yield4 = yield3_val * 2.001
+        self.get(column=yield4_col).set_value(yield4)
+        return DependencyResult.SUCCESS
+
+    def yield4_to_price(self, yield4_col: int, price_col: int) -> DependencyResult:
+        """Yield to price calculation."""
+        yield4_val = self.get(column=yield4_col).get_value()
+        price = (yield4_val / 8.012) / 1.5 * 100.0
         self.get(column=price_col).set_value(price)
         return DependencyResult.SUCCESS
 
@@ -58,10 +82,11 @@ class USTreasuryBond(SystemItem):
         self.add_dependency(
             self.column_index('price'), self.column_index('yield'), self.price_to_yield
         )
-        self.add_dependency(
-            self.column_index('yield'), self.column_index('price'), self.yield_to_price
-        )
-        self.add_dependency('price', self.column_index('dv01'), self.price_to_dv01)
+        self.add_dependency('yield', 'yield2', self.yield_to_yield2)
+        self.add_dependency('yield2', 'yield3', self.yield2_to_yield3)
+        self.add_dependency('yield3', 'yield4', self.yield3_to_yield4)
+        self.add_dependency('yield4', 'price', self.yield4_to_price)
+        self.add_dependency('price', 'dv01', self.price_to_dv01)
         self.add_action('dv01', self.dv01_action)
 
 
@@ -93,24 +118,28 @@ class TestSystemItem(unittest.TestCase):
         self.assertEqual(SOMETHING_TO_CHANGE, 20)
 
         # The circular price <-> yield dependency is being tested
-        us_bond.get(column='yield').set_value(1.55)
-        self.assertAlmostEqual(us_bond.get(column='price').get_value(), 103.3333333)
-        self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.55)
-        self.assertAlmostEqual(us_bond.get(column='dv01').get_value(), 1.0333333)
+        us_bond.get(column='yield').set_value(1.5075)
+        self.assertAlmostEqual(us_bond.get(column='price').get_value(), 100.50007527)
+        self.assertEqual(us_bond.get(column='yield').get_value(), 1.5075)
+        self.assertAlmostEqual(us_bond.get(column='dv01').get_value(), 1.00500075)
         self.assertEqual(SOMETHING_TO_CHANGE, 40)
 
         self.assertEqual(
             us_bond.get_string(),
-            'price: 103.33333333333334, -> price_to_yield,price_to_dv01,\nyield: 1.55, -> '
-            'yield_to_price,\ndv01: 1.0333333333333334, -> dv01_action,\nexpiration: '
-            '2019-03-05 08:23:05.123456,\n')
+            'price: 100.5000752746505, -> price_to_yield,price_to_dv01,\n'
+            'yield: 1.5075, -> yield_to_yield2,\n'
+            'yield2: 3.0165075, -> yield2_to_yield3,\n'
+            'yield3: 6.0360315075, -> yield3_to_yield4,\n'
+            'yield4: 12.078099046507498, -> yield4_to_price,\n'
+            'dv01: 1.005000752746505, -> dv01_action,\n'
+            'expiration: 2019-03-05 08:23:05.123456,\n')
 
         # Now that we set the max circle count to 10, price should not exactly stay the same
         us_bond.set_dependency_circle_max(10)
         us_bond.get(column='price').set_value(100.5)
         self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) > 0.0)
-        self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) < 0.000001)
-        self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.50749999)
+        self.assertTrue(abs(us_bond.get(column='price').get_value() - 100.5) < 0.001)
+        self.assertAlmostEqual(us_bond.get(column='yield').get_value(), 1.50751016)
 
         with self.assertRaises(NotImplementedError):
             us_bond.remove_column('yield')
