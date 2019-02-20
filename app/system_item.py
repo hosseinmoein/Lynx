@@ -86,7 +86,7 @@ class SystemItem(ContainerItem):
         if self._dependency_on:
             for dep in self._dependency_vector[independent_column]:
                 if dep.callback is None:  # Unfortunate side-affect of how _add_column works
-                    continue
+                    break
                 if dep.dependent_column is None:  # This is an action
                     dep.callback(independent_column)
                 # This is a dependency, so we execute only if we are within the set
