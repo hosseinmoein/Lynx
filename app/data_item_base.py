@@ -6,12 +6,12 @@ Distributed under the BSD Software License (see file LICENSE)
 """
 
 from datetime import datetime
-from typing import Callable, NewType, TypeVar, Union
+from typing import Callable, TypeVar, Union
 
 
-AllowedBaseTypes = NewType('AllowedBaseTypes', Union[int, float, str, bool, datetime, None])
+AllowedBaseTypes = Union[int, float, str, bool, datetime, None]
 _DataItemBaseType = TypeVar('_DataItemBaseType', bound='DataItemBase')
-_ColChangeCallback = NewType('_ColChangeCallback', Callable[[_DataItemBaseType, int, int], None])
+_DataChangeCallback = Callable[[_DataItemBaseType, int, int], None]
 
 
 class DataItemBase(object):
@@ -31,7 +31,7 @@ class DataItemBase(object):
         """Initialize."""
         super().__init__()
         # A callback to be called when value of this data item changes
-        self._item_change_callback: _ColChangeCallback = None
+        self._item_change_callback: _DataChangeCallback = None
         # The column index, in case this object is inside a container. Currently dependencies can
         # be triggered only on containers with one row. If we decide to have dependencies on many
         # rows (e.g. like Excel), we need to also store the row index here
@@ -60,7 +60,7 @@ class DataItemBase(object):
 
     def is_numeric(self: _DataItemBaseType) -> bool:
         """Is this a numeric?"""
-        value = self.get_value()
+        value: AllowedBaseTypes = self.get_value()
         return isinstance(value, float) or isinstance(value, int)
 
     def is_datetime(self: _DataItemBaseType) -> bool:

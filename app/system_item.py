@@ -6,13 +6,10 @@ Distributed under the BSD Software License (see file LICENSE)
 """
 
 from enum import Enum
-from typing import Callable, List, NewType, TypeVar, Union
+from typing import Callable, List, TypeVar, Union
 
 from .container_item import ContainerItem
 from .data_item_base import AllowedBaseTypes, DataItemBase
-
-
-_SystemItemType = TypeVar('_SystemItemType', bound='SystemItem')
 
 
 class DependencyResult(Enum):
@@ -23,18 +20,15 @@ class DependencyResult(Enum):
     NO_CHANGE = 2
 
 
-_DataChangeDependencyCallback = NewType(
-    '_DataChangeDependencyCallback', Callable[[_SystemItemType, int, int], DependencyResult]
-)
-_DataChangeActionCallback = NewType(
-    '_DataChangeActionCallback', Callable[[_SystemItemType, int], DependencyResult]
-)
+_SystemItemType = TypeVar('_SystemItemType', bound='SystemItem')
+_DataChangeDependencyCallback = Callable[[_SystemItemType, int, int], DependencyResult]
+_DataChangeActionCallback = Callable[[_SystemItemType, int], DependencyResult]
 
 
 class _DependencyItem(object):
     """An object to represent a dependency in SystemItem."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize."""
         super().__init__()
         # The column that needs to be changed because of independent column change.
@@ -70,7 +64,7 @@ class SystemItem(ContainerItem):
         result = ''
         for name_and_type in self._column_names_and_types:
             result += f'{name_and_type[0]}: '
-            data_idx = self._names_dict.get(name_and_type[0])
+            data_idx: int = self._names_dict.get(name_and_type[0], -1)
             for data_item in self._column_data[data_idx]:
                 result += f'{data_item.get_string()},'
                 if (len(self._dependency_vector[data_idx]) > 0 and
@@ -118,7 +112,7 @@ class SystemItem(ContainerItem):
     def _add_column(
         self: _SystemItemType,
         name: str,
-        value: Union[AllowedBaseTypes, ContainerItem],
+        value: Union[AllowedBaseTypes, DataItemBase],
         column_type: type,
     ) -> DataItemBase:
         """Private method to add a new column."""

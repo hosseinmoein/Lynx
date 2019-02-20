@@ -39,10 +39,10 @@ class ContainerItem(DataItemBase):
     @classmethod
     def _string_format(cls, container: _ContainerItemType, offset: str = '') -> str:
         """Class method to format the container nicely."""
-        result = ''
+        result: str = ''
         for name_and_type in container._column_names_and_types:
             result += f'{offset}{name_and_type[0]}: '
-            data_idx = container._names_dict.get(name_and_type[0])
+            data_idx: int = container._names_dict.get(name_and_type[0], -1)
             for data_item in container._column_data[data_idx]:
                 if isinstance(data_item, ContainerItem):
                     result += ' {\n'
@@ -118,12 +118,12 @@ class ContainerItem(DataItemBase):
 
     def contains(self: _ContainerItemType, column: str) -> bool:
         """Does it contain the column of the given name?"""
-        return self._names_dict.get(column, False)
+        return bool(self._names_dict.get(column, False))
 
     def _add_column(
         self: _ContainerItemType,
         name: str,
-        value: Union[AllowedBaseTypes, _ContainerItemType],
+        value: Union[AllowedBaseTypes, DataItemBase],
         column_type: type,
     ) -> DataItemBase:
         """Private method to add a new column."""
@@ -132,7 +132,7 @@ class ContainerItem(DataItemBase):
         self._column_names_and_types.append((name, column_type))
         col_index = len(self._column_names_and_types) - 1
         self._names_dict[name] = col_index
-        data_item = value  # If this is a ContainerITem
+        data_item: Union[AllowedBaseTypes, DataItemBase] = value  # If this is a ContainerItem
         if isinstance(value, datetime) or value is None:
             data_item = DataItem(value)
         elif not isinstance(value, ContainerItem):
@@ -152,39 +152,41 @@ class ContainerItem(DataItemBase):
 
     def add_integer_column(
         self: _ContainerItemType, name: str, value: Union[int, None]
-    ) -> DataItem:
+    ) -> DataItemBase:
         """Add an integer column."""
         return self._add_column(name, value, int)
 
     def add_float_column(
         self: _ContainerItemType, name: str, value: Union[float, None]
-    ) -> DataItem:
+    ) -> DataItemBase:
         """Add a float column."""
         return self._add_column(name, value, float)
 
     def add_string_column(
         self: _ContainerItemType, name: str, value: Union[str, None]
-    ) -> DataItem:
+    ) -> DataItemBase:
         """Add a string column."""
         return self._add_column(name, value, str)
 
-    def add_bool_column(self: _ContainerItemType, name: str, value: Union[bool, None]) -> DataItem:
+    def add_bool_column(
+            self: _ContainerItemType, name: str, value: Union[bool, None]
+    ) -> DataItemBase:
         """Add a boolean column."""
         return self._add_column(name, value, bool)
 
     def add_datetime_column(
         self: _ContainerItemType, name: str, value: Union[datetime, None]
-    ) -> DataItem:
+    ) -> DataItemBase:
         """Add a datetime column."""
         return self._add_column(name, value, datetime)
 
-    def add_null_column(self: _ContainerItemType, name: str) -> DataItem:
+    def add_null_column(self: _ContainerItemType, name: str) -> DataItemBase:
         """Add a null column."""
         return self._add_column(name, None, type(None))
 
     def add_container_column(
         self: _ContainerItemType, name: str, value: _ContainerItemType
-    ) -> _ContainerItemType:
+    ) -> DataItemBase:
         """Add a container column."""
         return self._add_column(name, value, ContainerItem)
 

@@ -6,7 +6,7 @@ Distributed under the BSD Software License (see file LICENSE)
 """
 
 from datetime import datetime
-from typing import TypeVar, Union
+from typing import TypeVar, Tuple, Union
 
 from .data_item_base import AllowedBaseTypes, DataItemBase
 
@@ -26,7 +26,9 @@ class DataItem(DataItemBase):
         """Get value method for DataItem."""
         return self._value
 
-    def _get_lhs_and_rhs(self, other):
+    def _get_lhs_and_rhs(
+            self: _DataItemType, other: DataItemBase
+    ) -> Tuple[AllowedBaseTypes, AllowedBaseTypes]:
        """Get the lhs and rhs"""
        lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
        rhs = ((type(self._value)(other.get_value()))
