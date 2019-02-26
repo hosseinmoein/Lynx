@@ -1,4 +1,4 @@
-![Alt text](dep_graph.png "Dependency Graph")
+![Alt text](dep_graph2.png "Dependency Graph")
 
 # Dependency Graph
 This is a dependency graph. The very end product is SystemItem and an example of that could be seen in <I>app/tests/system_item.py</I>.
