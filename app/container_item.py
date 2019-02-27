@@ -47,7 +47,7 @@ class ContainerItem(DataItemBase):
                 if isinstance(data_item, ContainerItem):
                     result += ' {\n'
                     result += ContainerItem._string_format(data_item, offset + '    ')
-                    result += '}\n'
+                    result += '}'
                 else:
                     result += f'{data_item.get_string()},'
             result += '\n'
@@ -61,7 +61,7 @@ class ContainerItem(DataItemBase):
         """This is a container."""
         return True
 
-    def __eq__(self: _ContainerItemType, other: DataItemBase) -> bool:
+    def __eq__(self: _ContainerItemType, other: _ContainerItemType) -> bool:
         """Equal operator for containers."""
         if not isinstance(other, ContainerItem):
             raise TypeError(
@@ -71,16 +71,21 @@ class ContainerItem(DataItemBase):
         return (self._column_data == other._column_data and
                 self._column_names_and_types == other._column_names_and_types)
 
-    def _set_hook(self: _ContainerItemType, value: Union[DataItemBase, AllowedBaseTypes]) -> bool:
+    def _set_value_hook(
+            self: _ContainerItemType, value: Union[DataItemBase, AllowedBaseTypes]
+    ) -> bool:
         """This is called by the parent set method."""
         if not isinstance(value, ContainerItem):
             raise TypeError(
-                'ContainerItem::_set_hook(): Container item could only be assigned '
+                'ContainerItem::_set_value_hook(): Container item could only be assigned '
                 'with another container item'
             )
         if self == value:
             return False
-        self.__dict__ = copy.deepcopy(value.__dict__)
+        # We don't want to copy the meta-data in DataItemBase
+        self._column_names_and_types = copy.deepcopy(value._column_names_and_types)
+        self._column_data = copy.deepcopy(value._column_data)
+        self._names_dict = copy.deepcopy(value._names_dict)
         return True
 
     # Container item specific interface
@@ -91,14 +96,14 @@ class ContainerItem(DataItemBase):
 
     def number_of_rows(self: _ContainerItemType, column: Union[int, str]) -> int:
         """Get the number of rows for the given column"""
-        col_index = self._names_dict.get(column, -1) if isinstance(column, str) else column
+        col_index = self._names_dict.get(column, -1) if type(column) is str else column
         if col_index < 0:
             raise IndexError(f'ContainerItem::number_of_rows(): column {column} does not exist')
         return len(self._column_data[col_index])
 
     def get(self: _ContainerItemType, row: int = 0, column: Union[int, str] = 0) -> DataItemBase:
         """Get data from container for the given row and column."""
-        column_num = self._names_dict.get(column) if isinstance(column, str) else column
+        column_num = self._names_dict.get(column) if type(column) is str else column
         if column_num is None or column_num < 0 or column_num >= len(self._column_data):
             raise IndexError(f'ContainerItem::get(): column {column} does not exist')
         if row < 0 or row >= len(self._column_data[column_num]):
@@ -133,7 +138,7 @@ class ContainerItem(DataItemBase):
         col_index = len(self._column_names_and_types) - 1
         self._names_dict[name] = col_index
         data_item: Union[AllowedBaseTypes, DataItemBase] = value  # If this is a ContainerItem
-        if isinstance(value, datetime) or value is None:
+        if type(value) is datetime or value is None:
             data_item = DataItem(value)
         elif not isinstance(value, ContainerItem):
             data_item = DataItem(column_type(value))
@@ -143,7 +148,7 @@ class ContainerItem(DataItemBase):
 
     def remove_column(self: _ContainerItemType, column: Union[int, str]) -> None:
         """Remove the given column."""
-        column_num = self._names_dict.get(column) if isinstance(column, str) else column
+        column_num = self._names_dict.get(column) if type(column) is str else column
         if column_num is None or column_num < 0 or column_num >= len(self._column_data):
             raise IndexError(f'ContainerItem::remove_column(): column {column} does not exist')
         del self._column_names_and_types[column_num]
@@ -196,7 +201,7 @@ class ContainerItem(DataItemBase):
         value: Union[AllowedBaseTypes, _ContainerItemType],
     ) -> DataItemBase:
         """Add a row to the given column."""
-        data_index = self._names_dict.get(column) if isinstance(column, str) else column
+        data_index = self._names_dict.get(column) if type(column) is str else column
         if data_index is None or data_index < 0 or data_index >= len(self._column_data):
             raise RuntimeError(f'ContainerItem::add_row(): column {str(column)} does not exist')
 
@@ -219,7 +224,7 @@ class ContainerItem(DataItemBase):
 
     def remove_row(self: _ContainerItemType, column: Union[str, int], row_index: int) -> None:
         """Remove the row for the given column."""
-        column_num = self._names_dict.get(column) if isinstance(column, str) else column
+        column_num = self._names_dict.get(column) if type(column) is str else column
         if column_num is None or column_num < 0 or column_num >= len(self._column_data):
             raise IndexError(f'ContainerItem::remove_row(): column {column} does not exist')
         row_len = len(self._column_data[column_num])

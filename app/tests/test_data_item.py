@@ -133,7 +133,7 @@ class TestDataItems(unittest.TestCase):
             '    int_column2: 5,\n'
             '    datetime_column: 2019-02-23 23:30:45.965234,2019-02-21 04:50:00.230000,\n'
             '    might_be_null_column: ~~NULL~~,45,\n'
-            '}\n\n')
+            '}\n')
 
         self.assertEqual(ci.get(column='int_column').get_value(), 34)
         self.assertEqual(ci_2.get(column='int_column').get_value(), -34)

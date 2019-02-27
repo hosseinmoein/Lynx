@@ -30,9 +30,9 @@ class DataItem(DataItemBase):
             self: _DataItemType, other: DataItemBase
     ) -> Tuple[AllowedBaseTypes, AllowedBaseTypes]:
        """Get the lhs and rhs"""
-       lhs = self._value if not isinstance(self._value, datetime) else self._value.timestamp()
+       lhs = self._value if not self.is_datetime() else self._value.timestamp()
        rhs = ((type(self._value)(other.get_value()))
-              if not isinstance(other.get_value(), datetime) else other.get_value().timestamp()
+              if not other.is_datetime() else other.get_value().timestamp()
               )
        return lhs, rhs
 
@@ -64,11 +64,11 @@ class DataItem(DataItemBase):
             return True
         return False
 
-    def _set_hook(self: _DataItemType, value: Union[DataItemBase, AllowedBaseTypes]) -> bool:
+    def _set_value_hook(self: _DataItemType, value: Union[DataItemBase, AllowedBaseTypes]) -> bool:
         """Set hook method."""
-        if self._value is None or isinstance(self._value, datetime) and isinstance(value, datetime):
+        if self._value is None or self.is_datetime() and type(value) is datetime:
             value_to_set = value
-        elif isinstance(value, DataItemBase):
+        elif type(value) is DataItem:
             value_to_set = type(self._value)(value.get_value())
         else:
             value_to_set = type(self._value)(value)

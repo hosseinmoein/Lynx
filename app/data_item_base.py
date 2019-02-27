@@ -5,6 +5,7 @@ Copyright (C) 2019-2020 Hossein Moein
 Distributed under the BSD Software License (see file LICENSE)
 """
 
+import copy
 from datetime import datetime
 from typing import Callable, TypeVar, Union
 
@@ -61,11 +62,11 @@ class DataItemBase(object):
     def is_numeric(self: _DataItemBaseType) -> bool:
         """Is this a numeric?"""
         value: AllowedBaseTypes = self.get_value()
-        return isinstance(value, float) or isinstance(value, int)
+        return type(value) in (float, int)
 
     def is_datetime(self: _DataItemBaseType) -> bool:
         """Is this a datetime?"""
-        return isinstance(self.get_value(), datetime)
+        return type(self.get_value()) is datetime
 
     def _touch(self: _DataItemBaseType) -> None:
         """Trigger dependency."""
@@ -108,10 +109,10 @@ class DataItemBase(object):
         """Set hook to be implemented by derived classes."""
         raise NotImplementedError('DataItemBase::_set_to_null_hook() is not implemented.')
 
-    def _set_hook(self: _DataItemBaseType,
-                  value: Union[_DataItemBaseType, AllowedBaseTypes]) -> bool:
+    def _set_value_hook(self: _DataItemBaseType,
+                        value: Union[_DataItemBaseType, AllowedBaseTypes]) -> bool:
         """Set hook to be implemented by derived classes."""
-        raise NotImplementedError('DataItemBase::_set_hook() is not implemented.')
+        raise NotImplementedError('DataItemBase::_set_value_hook() is not implemented.')
 
     def set_to_null(self: _DataItemBaseType) -> None:
         """This is the only way to set an existing non-null DataItem to null"""
@@ -121,5 +122,5 @@ class DataItemBase(object):
     def set_value(self: _DataItemBaseType,
                   value: Union[_DataItemBaseType, AllowedBaseTypes]) -> None:
         """Set value method."""
-        if self._set_hook(value):  # A true return means something was changed
+        if self._set_value_hook(value):  # A true return means something was changed
             self._touch()  # Trigger the dependencies, if they are set up.

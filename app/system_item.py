@@ -59,21 +59,38 @@ class SystemItem(ContainerItem):
         # Max number of times to go around a circular dependency before stopping
         self._dependency_circle_max: int = 1
 
-    def get_value(self: _SystemItemType) -> AllowedBaseTypes:
-        """get_value() for system item."""
-        result = ''
-        for name_and_type in self._column_names_and_types:
-            result += f'{name_and_type[0]}: '
-            data_idx: int = self._names_dict.get(name_and_type[0], -1)
-            for data_item in self._column_data[data_idx]:
-                result += f'{data_item.get_string()},'
-                if (len(self._dependency_vector[data_idx]) > 0 and
-                        self._dependency_vector[data_idx][0].callback is not None):
-                    result += ' -> '
-                    for dep in self._dependency_vector[data_idx]:
-                        result += f'{dep.callback.__name__},'
+    @classmethod
+    def _string_format(cls, system: _SystemItemType, offset: str = '') -> str:
+        """Class method to format the system nicely."""
+        result: str = ''
+        for name_and_type in system._column_names_and_types:
+            result += f'{offset}{name_and_type[0]}: '
+            data_idx: int = system._names_dict.get(name_and_type[0], -1)
+            for data_item in system._column_data[data_idx]:
+                if isinstance(data_item, ContainerItem):
+                    result += ' {\n'
+                    result += SystemItem._string_format(data_item, offset + '    ')
+                    result += '}'
+                else:
+                    result += f'{data_item.get_string()},'
+                if isinstance(data_item, SystemItem):
+                    if (len(data_item._dependency_vector[data_idx]) > 0 and
+                            data_item._dependency_vector[data_idx][0].callback is not None):
+                        result += ' -> '
+                        for dep in data_item._dependency_vector[data_idx]:
+                            result += f'{dep.callback.__name__},'
+                elif isinstance(system, SystemItem):
+                    if (len(system._dependency_vector[data_idx]) > 0 and
+                            system._dependency_vector[data_idx][0].callback is not None):
+                        result += ' -> '
+                        for dep in system._dependency_vector[data_idx]:
+                            result += f'{dep.callback.__name__},'
             result += '\n'
         return result
+
+    def get_value(self: _SystemItemType) -> AllowedBaseTypes:
+        """get_value() for system item."""
+        return SystemItem._string_format(self)
 
     def _dependency_engine(self: _SystemItemType, row: int, independent_column: int) -> None:
         """The dependency loop where things happen."""
@@ -96,7 +113,7 @@ class SystemItem(ContainerItem):
                 # In case this system item itself is part of another system item dependency
                 self._touch()
 
-    def __eq__(self: _SystemItemType, other: DataItemBase) -> bool:
+    def __eq__(self: _SystemItemType, other: _SystemItemType) -> bool:
         """Equal operator for system item."""
         if not isinstance(other, SystemItem):
             raise TypeError(
@@ -147,12 +164,12 @@ class SystemItem(ContainerItem):
         """Add a dependency callback for the given columns"""
         indep_col_idx = (
             self.column_index(independent_column)
-            if isinstance(independent_column, str)
+            if type(independent_column) is str
             else independent_column
         )
         dep_col_idx = (
             self.column_index(dependent_column)
-            if isinstance(dependent_column, str)
+            if type(dependent_column) is str
             else dependent_column
         )
         dep_item = _DependencyItem()
@@ -173,7 +190,7 @@ class SystemItem(ContainerItem):
         """Add an action callback for the given columns"""
         indep_col_idx = (
             self.column_index(independent_column)
-            if isinstance(independent_column, str)
+            if type(independent_column) is str
             else independent_column
         )
         dep_item = _DependencyItem()
