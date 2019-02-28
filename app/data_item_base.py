@@ -5,7 +5,6 @@ Copyright (C) 2019-2020 Hossein Moein
 Distributed under the BSD Software License (see file LICENSE)
 """
 
-import copy
 from datetime import datetime
 from typing import Callable, TypeVar, Union
 
