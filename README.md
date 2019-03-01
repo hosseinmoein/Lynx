@@ -14,7 +14,6 @@ class USTreasuryBond(SystemItem):
     def __init__(self) -> None:
         """Initialize."""
         super().__init__()
-        self.turn_dependency_off()
         self.add_float_column('price', 0)
         self.add_float_column('yield', 0)
         self.add_float_column('dv01', 0)
@@ -56,9 +55,8 @@ class USTreasuryBond(SystemItem):
 
 
 us_bond = USTreasuryBond()
-        
-us_bond.turn_dependency_on()
-# The circular price <-> yield dependency is being tested
+
+# Trigger circular price <-> yield dependency
 us_bond.get(column='price').set_value(100.5)
 # After the above line:
 #     price == 100.5
