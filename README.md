@@ -1,7 +1,7 @@
 ![Alt text](dep_graph2.png "Dependency Graph")
 
 # Dependency Graph
-This is a dependency graph. The very end product is SystemItem and an example of that could be seen in <I>app/tests/system_item.py</I>.
+This is a dependency graph. The very end product is SystemItem and an example of that could be seen in <I>app/tests/test_system_item.py</I>.
 The goal of this is to manage systems that have a large number of calculations that should happen in special order when an external event happens. Basically this mimics an ecosystem (or Excel), if you will. There are a lot of components in an ecosystem and when an external stimulus enters the system, it triggers a lot of reactions until the system comes to an equilibrium again. Trading alpha and risk models are also similar to an ecosystem with a lot of factors that can change as a result of external market events (e.g. a new bid, a new trade, etc.).<BR>
     
 ```Python
@@ -59,9 +59,9 @@ us_bond = USTreasuryBond()
 # Trigger circular price <-> yield dependency
 us_bond.get(column='price').set_value(100.5)
 # After the above line:
-#     price == 100.5
-#     yield == 1.50749999
-#     dv01 == 1.005
+#     us_bond.get(column='price') == 100.5
+#     us_bond.get(column='yield') == 1.50749999
+#     us_bond.get(column='dv01') == 1.005
 ```
 
 # Documentation
