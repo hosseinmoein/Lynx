@@ -143,6 +143,7 @@ class ContainerItem(DataItemBase):
         elif not isinstance(value, ContainerItem):
             data_item = DataItem(column_type(value))
         data_item._my_column_in_container = col_index  # Sneaking a private member access!
+        data_item._my_container_touch = self._touch  # Sneaking a private member access!
         self._column_data.append([data_item])
         return data_item
 
