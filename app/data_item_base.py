@@ -12,6 +12,7 @@ from typing import Callable, TypeVar, Union
 AllowedBaseTypes = Union[int, float, str, bool, datetime, None]
 _DataItemBaseType = TypeVar('_DataItemBaseType', bound='DataItemBase')
 _DataChangeCallback = Callable[[_DataItemBaseType, int, int], None]
+_TouchMethod = Callable[[_DataItemBaseType], None]
 
 
 class DataItemBase(object):
@@ -36,6 +37,9 @@ class DataItemBase(object):
         # be triggered only on containers with one row. If we decide to have dependencies on many
         # rows (e.g. like Excel), we need to also store the row index here
         self._my_column_in_container: int = None
+        # This is the _touch() method of the container, in case this data item is inside
+        # another container
+        self._my_container_touch: _TouchMethod = None
         # Current count of circles made around a circular dependency
         self._dependency_circle_count: int = 0
 
@@ -117,9 +121,13 @@ class DataItemBase(object):
         """This is the only way to set an existing non-null DataItem to null"""
         if self._set_to_null_hook():  # A true return means something was changed
             self._touch()  # Trigger the dependencies, if they are set up.
+            if self._my_container_touch is not None:
+                self._my_container_touch()
 
     def set_value(self: _DataItemBaseType,
                   value: Union[_DataItemBaseType, AllowedBaseTypes]) -> None:
         """Set value method."""
         if self._set_value_hook(value):  # A true return means something was changed
             self._touch()  # Trigger the dependencies, if they are set up.
+            if self._my_container_touch is not None:
+                self._my_container_touch()
