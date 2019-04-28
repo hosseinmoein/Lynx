@@ -35,7 +35,7 @@ class USTreasuryBond(SystemItem):
         return DependencyResult.SUCCESS
 
     def price_to_dv01(self, price_col: int, dv01_col: int) -> DependencyResult:
-        """Yield to price calculation."""
+        """Price to dv01 calculation."""
         price = self.get(column=price_col).get_value()
         self.get(column=dv01_col).set_value(price / 100.0)
         return DependencyResult.SUCCESS
