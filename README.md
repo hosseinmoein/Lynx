@@ -59,9 +59,9 @@ us_bond = USTreasuryBond()
 # Trigger circular price <-> yield dependency
 us_bond.get(column='price').set_value(100.5)
 # After the above line:
-#     us_bond.get(column='price') == 100.5
-#     us_bond.get(column='yield') == 1.50749999
-#     us_bond.get(column='dv01') == 1.005
+#     us_bond.get(column='price').get_value() == 100.5
+#     us_bond.get(column='yield').get_value() == 1.50749999
+#     us_bond.get(column='dv01').get_value() == 1.005
 ```
 
 # Documentation
