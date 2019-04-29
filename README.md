@@ -17,7 +17,7 @@ class USTreasuryBond(SystemItem):
         self.add_float_column('price', 0)
         self.add_float_column('yield', 0)
         self.add_float_column('dv01', 0)
-        self.add_integer_column('expiration', 0)
+        self.add_datetime_column('expiration', None)
         self.wire()
 
     def price_to_yield(self, price_col: int, yield_col: int) -> DependencyResult:
