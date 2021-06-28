@@ -1,4 +1,4 @@
-![Alt text](dep_graph2.png "Dependency Graph")
+<img src="dep_graph2.png" alt="drawing" width="500"/>
 
 # Dependency Graph
 This is a dependency graph. The very end product is SystemItem and an example of that could be seen in <I>app/tests/test_system_item.py</I>.
@@ -17,7 +17,7 @@ class USTreasuryBond(SystemItem):
         self.add_float_column('price', 0)
         self.add_float_column('yield', 0)
         self.add_float_column('dv01', 0)
-        self.add_integer_column('expiration', 0)
+        self.add_datetime_column('expiration', None)
         self.wire()
 
     def price_to_yield(self, price_col: int, yield_col: int) -> DependencyResult:
@@ -35,7 +35,7 @@ class USTreasuryBond(SystemItem):
         return DependencyResult.SUCCESS
 
     def price_to_dv01(self, price_col: int, dv01_col: int) -> DependencyResult:
-        """Yield to price calculation."""
+        """Price to dv01 calculation."""
         price = self.get(column=price_col).get_value()
         self.get(column=dv01_col).set_value(price / 100.0)
         return DependencyResult.SUCCESS
@@ -59,9 +59,9 @@ us_bond = USTreasuryBond()
 # Trigger circular price <-> yield dependency
 us_bond.get(column='price').set_value(100.5)
 # After the above line:
-#     us_bond.get(column='price') == 100.5
-#     us_bond.get(column='yield') == 1.50749999
-#     us_bond.get(column='dv01') == 1.005
+#     us_bond.get(column='price').get_value() == 100.5
+#     us_bond.get(column='yield').get_value() == 1.50749999
+#     us_bond.get(column='dv01').get_value() == 1.005
 ```
 
 # Documentation
