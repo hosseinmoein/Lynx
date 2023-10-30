@@ -20,27 +20,27 @@ class USTreasuryBond(SystemItem):
         self.add_datetime_column('expiration', None)
         self.wire()
 
-    def price_to_yield(self, price_col: int, yield_col: int) -> DependencyResult:
+    def price_to_yield(self, price_col: float, yield_col: float) -> DependencyResult:
         """Price to yield calculation."""
         price = self.get(column=price_col).get_value()
         yield_val = price / 100.0 * 1.5
         self.get(column=yield_col).set_value(yield_val)
         return DependencyResult.SUCCESS
 
-    def yield_to_price(self, yield_col: int, price_col: int) -> DependencyResult:
+    def yield_to_price(self, yield_col: float, price_col: float) -> DependencyResult:
         """Yield to price calculation."""
         yield_val = self.get(column=yield_col).get_value()
         price = yield_val / 1.5 * 100.0
         self.get(column=price_col).set_value(price)
         return DependencyResult.SUCCESS
 
-    def price_to_dv01(self, price_col: int, dv01_col: int) -> DependencyResult:
+    def price_to_dv01(self, price_col: float, dv01_col: float) -> DependencyResult:
         """Price to dv01 calculation."""
         price = self.get(column=price_col).get_value()
         self.get(column=dv01_col).set_value(price / 100.0)
         return DependencyResult.SUCCESS
 
-    def dv01_action(self, dv01_col: int) -> DependencyResult:
+    def dv01_action(self, dv01_col: float) -> DependencyResult:
         """Action taken when dv01 changes"""
         global SOMETHING_TO_CHANGE
         SOMETHING_TO_CHANGE *= 2
